@@ -3,6 +3,8 @@ package core;
 import botApplications.discApplication.core.DiscApplicationEngine;
 import botApplications.response.ResponseHandler;
 import botApplications.telApplication.core.TeleApplicationEngine;
+import botRequestApi.api.BotRequestApi;
+import botRequestApi.netConnect.NetConnectCore;
 import homeworkApi.core.HomeworkApiEngine;
 import utils.FileUtils;
 import utils.Properties;
@@ -12,17 +14,19 @@ public class Engine {
 
     private final String consMsgDef = "[Engine]";
 
-    FileUtils fileUtils = new FileUtils(this);
-    UtilityBase utilityBase = new UtilityBase(this);
-    Properties properties;
-    HomeworkApiEngine homeworkApiEngine = new HomeworkApiEngine(this);
+    private FileUtils fileUtils = new FileUtils(this);
+    private UtilityBase utilityBase = new UtilityBase(this);
+    private Properties properties;
+    private HomeworkApiEngine homeworkApiEngine = new HomeworkApiEngine(this);
+    private BotRequestApi botRequestApi = new BotRequestApi(this);
 
-    DiscApplicationEngine discApplicationEngine = new DiscApplicationEngine(this);
-    TeleApplicationEngine teleApplicationEngine = new TeleApplicationEngine(this);
-    ResponseHandler responseHandler = new ResponseHandler(this);
+    private DiscApplicationEngine discApplicationEngine = new DiscApplicationEngine(this);
+    private TeleApplicationEngine teleApplicationEngine = new TeleApplicationEngine(this);
+    private ResponseHandler responseHandler = new ResponseHandler(this);
+    private ConsoleCommandHandler consoleCommandHandler;
 
     public void boot(String[] args) {
-        new ConsoleCommandHandler(this);
+        consoleCommandHandler = new ConsoleCommandHandler(this);
         loadProperties();
         handleArgs(args);
         new Thread(new SaveThread(this)).start();
@@ -32,12 +36,17 @@ public class Engine {
         if (args.length > 0) {
             switch (args[0]) {
                 case "test":
-
+                    botRequestApi.boot(true);
                     break;
                 case "start":
+                    botRequestApi.boot(false);
                     discApplicationEngine.startBotApplication();
                     teleApplicationEngine.startBotApplication();
                     homeworkApiEngine.boot();
+                    break;
+
+                default:
+                    botRequestApi.boot(false);
                     break;
             }
         }
@@ -101,5 +110,13 @@ public class Engine {
 
     public ResponseHandler getResponseHandler() {
         return responseHandler;
+    }
+
+    public BotRequestApi getBotRequestApi() {
+        return botRequestApi;
+    }
+
+    public ConsoleCommandHandler getConsoleCommandHandler() {
+        return consoleCommandHandler;
     }
 }

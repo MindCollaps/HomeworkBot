@@ -139,7 +139,7 @@ public class TeleApplicationEngine {
         for(TeleHomeworkConnection c: engine.getProperties().hApiTeleConnection){
             for (Class ca:c.getClasses()) {
                 if(classId.equals(ca.getId())){
-                    textUtils.sendMessage(c.getChatId(),message);
+                    textUtils.sendMessage(c.getChatId(), message);
                 }
             }
         }

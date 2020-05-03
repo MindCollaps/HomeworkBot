@@ -2,6 +2,7 @@ package core;
 
 import homeworkApi.librarys.Task;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -15,12 +16,32 @@ public class ConsoleCommandHandler {
         new Thread(new SystemInListener()).start();
     }
 
-    public void handleConsoleCommand(String command) {
+    public JSONObject handleApiCommand(JSONObject req){
+        String request = "";
+        JSONObject response = new JSONObject();
+        request = (String) req.get("req");
+        if(req.containsKey("c1")){
+            request = request + " " + req.get("c1");
+            if(req.containsKey("c2")){
+                request = request + " " + req.get("c2");
+            }
+        }
+        if(handleConsoleCommand(request) == false){
+            response.put("status", "400");
+            response.put("response", "invalid command");
+        } else {
+            response.put("status", "200");
+            response.put("response", "success");
+        }
+        return response;
+    }
+
+    public boolean handleConsoleCommand(String command) {
         String args0;
         try {
             args0 = command.split(" ")[0];
         } catch (Exception e) {
-            return;
+            return false;
         }
         switch (args0.toLowerCase()) {
             case "save":
@@ -49,9 +70,9 @@ public class ConsoleCommandHandler {
                 break;
 
             case "startbot":
-                engine.discApplicationEngine.startBotApplication();
-                engine.teleApplicationEngine.startBotApplication();
-                engine.homeworkApiEngine.boot();
+                engine.getDiscEngine().startBotApplication();
+                engine.getTeleApplicationEngine().startBotApplication();
+                engine.getHomeworkApiEngine().boot();
                 break;
 
             case "stopbot":
@@ -64,7 +85,7 @@ public class ConsoleCommandHandler {
                     engine.getProperties().telBotApplicationToken = command.split(" ")[1];
                 } catch (Exception e) {
                     engine.getUtilityBase().printOutput("Invalid!", false);
-                    return;
+                    return false;
                 }
                 engine.getUtilityBase().printOutput("Setted Telegram token", false);
                 break;
@@ -74,7 +95,7 @@ public class ConsoleCommandHandler {
                     engine.getProperties().telBotApplicationName = command.split(" ")[1];
                 } catch (Exception e) {
                     engine.getUtilityBase().printOutput("Invalid!", false);
-                    return;
+                    return false;
                 }
                 engine.getUtilityBase().printOutput("Setted Telegram name", false);
                 break;
@@ -84,7 +105,7 @@ public class ConsoleCommandHandler {
                     engine.getProperties().discBotApplicationToken = command.split(" ")[1];
                 } catch (Exception e) {
                     engine.getUtilityBase().printOutput("Invalid!", false);
-                    return;
+                    return false;
                 }
                 engine.getUtilityBase().printOutput("Setted Discord token", false);
                 break;
@@ -94,7 +115,7 @@ public class ConsoleCommandHandler {
                     engine.getProperties().saveSpeed = Integer.valueOf(command.split(" ")[1]);
                 } catch (Exception e) {
                     engine.getUtilityBase().printOutput("Invalid", false);
-                    break;
+                    return false;
                 }
                 engine.getUtilityBase().printOutput("Changed save speed!", false);
                 break;
@@ -107,7 +128,7 @@ public class ConsoleCommandHandler {
                         e.printStackTrace();
                     }
                     engine.getUtilityBase().printOutput("Invalid", false);
-                    break;
+                    return false;
                 }
                 engine.getUtilityBase().printOutput("Changed reminder speed!", false);
                 break;
@@ -125,7 +146,7 @@ public class ConsoleCommandHandler {
                         e.printStackTrace();
                     }
                     engine.getUtilityBase().printOutput("~Error can't fetching updates", false);
-                    break;
+                    return false;
                 }
                 engine.getHomeworkApiEngine().receiveTaskUpdate(engine.getHomeworkApiEngine().getLibParser().parseJsonToTaskArray(tasksJson));
                 engine.getUtilityBase().printOutput("~Fetching done", false);
@@ -143,7 +164,7 @@ public class ConsoleCommandHandler {
                     key = command.split(" ")[1];
                 } catch (Exception e) {
                     engine.getUtilityBase().printOutput("Invalid", false);
-                    break;
+                    return false;
                 }
 
                 try {
@@ -153,23 +174,23 @@ public class ConsoleCommandHandler {
                         e.printStackTrace();
                     }
                     engine.getUtilityBase().printOutput("~Error can't fetching updates", false);
-                    break;
+                    return false;
                 }
                 ArrayList<Task> taskList = engine.getHomeworkApiEngine().getLibParser().parseJsonToTaskArray(tasksJson);
                 for (Task task : taskList) {
                     if (key.equals(task.getId())) {
                         engine.getHomeworkApiEngine().makeNewTaskAnnouncement(task,false);
                         engine.getUtilityBase().printOutput("Die Nachricht wurde an die jeweiligen Klassen gesendet!", false);
-                        return;
+                        break;
                     }
                 }
                 engine.getUtilityBase().printOutput("Die Aufgabe wurde nicht gefunden", false);
-                break;
+                return false;
 
             case "postall":
                 String message = extractMessage(command,1);
-                engine.getTeleApplicationEngine().sendToAllClasses(message);
-                engine.getDiscApplicationEngine().sendToAllClasses(message);
+                engine.getTeleApplicationEngine().sendToAllClasses(convert(message));
+                engine.getDiscApplicationEngine().sendToAllClasses(convert(message));
                 engine.getUtilityBase().printOutput("Die Nachricht wurde an alle Klassen gesendet!", false);
                 break;
 
@@ -179,11 +200,11 @@ public class ConsoleCommandHandler {
                     key = command.split(" ")[1];
                 } catch (Exception e) {
                     engine.getUtilityBase().printOutput("Invalid", false);
-                    break;
+                    return false;
                 }
                 message = extractMessage(command,2);
-                engine.getDiscApplicationEngine().sendToSpecificClass(message,key);
-                engine.getTeleApplicationEngine().sendToSpecificClass(message,key);
+                engine.getDiscApplicationEngine().sendToSpecificClass(convert(message),key);
+                engine.getTeleApplicationEngine().sendToSpecificClass(convert(message),key);
                 engine.getUtilityBase().printOutput("Die Nachricht wurde an die jeweiligen Klassen gesendet!", false);
                 break;
 
@@ -195,6 +216,7 @@ public class ConsoleCommandHandler {
                 System.out.println("unknown command! Use \"help\" to help...yourself :D");
                 break;
         }
+        return true;
     }
 
     private class SystemInListener implements Runnable {
@@ -231,5 +253,9 @@ public class ConsoleCommandHandler {
             return null;
         }
         return message;
+    }
+
+    private String convert(String s){
+        return s.replace("\\n", "\n");
     }
 }
