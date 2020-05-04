@@ -31,7 +31,7 @@ public class ConsoleCommandHandler {
             response.put("response", "invalid command");
         } else {
             response.put("status", "200");
-            response.put("response", "success");
+            response.put("response", "executed command!");
         }
         return response;
     }

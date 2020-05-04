@@ -3,13 +3,9 @@ package botApplications.telApplication.commands;
 import botApplications.telApplication.librarys.TeleHomeworkConnection;
 import com.pengrad.telegrambot.model.Update;
 import core.Engine;
-import homeworkApi.librarys.Class;
 import homeworkApi.librarys.User;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Base64;
 
 public class TeleCmdStart implements TeleCommand {
     @Override

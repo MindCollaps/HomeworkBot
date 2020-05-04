@@ -1,12 +1,13 @@
 package botRequestApi.api;
 
-import botRequestApi.netConnect.NetConnectCore;
-import botRequestApi.netConnect.ServerThread.Action;
-import botRequestApi.netConnect.ServerThread.ClientMessageHandlerThread;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import core.Engine;
 import org.json.simple.JSONObject;
 
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.InetSocketAddress;
 
 public class BotRequestApi {
 
@@ -14,48 +15,141 @@ public class BotRequestApi {
 
     private Engine engine;
 
-    private NetConnectCore netConnectCore;
+
+    private HttpServer server;
 
     public BotRequestApi(Engine engine) {
         this.engine = engine;
     }
 
-    public void boot(boolean overridePort){
+    public void boot(boolean overridePort) {
         engine.getUtilityBase().printOutput(consMsgDef + " !reading environment variable api port!", true);
         String sysEnvStr = System.getenv("HWBOT_PORT");
-        if((!sysEnvStr.equals("")&&sysEnvStr != null)||overridePort){
-            Action action = new Action() {
-                @Override
-                public void action(String req, PrintWriter res) {
-                    String rec = engine.getBotRequestApi().handleRec(req);
-                    if (rec != null && !rec.equals(""))
-                        res.println(rec);
-                }
-            };
-            netConnectCore = new NetConnectCore(engine);
-            if(overridePort){
+        if (sysEnvStr != null || overridePort || engine.getProperties().apiPort != 0) {
+
+            if (overridePort) {
                 engine.getUtilityBase().printOutput(consMsgDef + " !Override port is active -> using port 5000 for bot api!", false);
-                netConnectCore.setPortNumber(Integer.valueOf(5000));
+                try {
+                    server = HttpServer.create(new InetSocketAddress(5000), 0);
+                } catch (IOException e) {
+                    if (engine.getProperties().debug)
+                        e.printStackTrace();
+                    engine.getUtilityBase().printOutput(consMsgDef + " !!!API Start error -> abort!!!", false);
+                    return;
+                }
+            } else if(engine.getProperties().apiPort != 0) {
+                engine.getUtilityBase().printOutput(consMsgDef + " !Override port is active -> using port 5000 for bot api!", false);
+                try {
+                    server = HttpServer.create(new InetSocketAddress(engine.getProperties().apiPort), 0);
+                } catch (IOException e) {
+                    if (engine.getProperties().debug)
+                        e.printStackTrace();
+                    engine.getUtilityBase().printOutput(consMsgDef + " !!!API Start error -> abort!!!", false);
+                    return;
+                }
             } else {
-                netConnectCore.setPortNumber(Integer.valueOf(sysEnvStr));
+                if (sysEnvStr.equals("")) {
+                    engine.getUtilityBase().printOutput(consMsgDef + "!!!Failed to read environment variable -> Failed to start API!!!", false);
+                    return;
+                }
+                engine.getUtilityBase().printOutput(consMsgDef + " !Starting API on port: " + sysEnvStr + "!", false);
+                try {
+                    server = HttpServer.create(new InetSocketAddress(Integer.valueOf(sysEnvStr)), 0);
+                } catch (IOException e) {
+                    if (engine.getProperties().debug)
+                        e.printStackTrace();
+                    engine.getUtilityBase().printOutput(consMsgDef + " !!!API Start error -> abort!!!", false);
+                    return;
+                }
             }
-            netConnectCore.setAction(action);
-            netConnectCore.startServer();
-            engine.getUtilityBase().printOutput(consMsgDef + " !API Started!", false);
+            server.createContext("/api", new ApiHandler());
+            server.setExecutor(null);
+            server.start();
+            engine.getUtilityBase().printOutput(consMsgDef + " !API Started running on: " + server.getAddress().getHostString() + " port: " + server.getAddress().getPort() + "!", false);
         } else {
             engine.getUtilityBase().printOutput(consMsgDef + "!!!Failed to read environment variable -> Failed to start API!!!", false);
         }
     }
 
-    public String handleRec(String instructions){
-        engine.getUtilityBase().printOutput(consMsgDef + " !Receded Api instructions!", true);
+    public String handleRec(String instructions) {
+        engine.getUtilityBase().printOutput(consMsgDef + " !Received Api instructions!", true);
         JSONObject msg;
         try {
-             msg = engine.getFileUtils().convertStringToJson(instructions);
-        } catch (Exception e){
+            msg = engine.getFileUtils().convertStringToJson(instructions);
+        } catch (Exception e) {
             engine.getUtilityBase().printOutput(consMsgDef + " !!!Api instructions was invalid (can't convert to JSON) -> abort!!!", true);
             return null;
         }
         return engine.getFileUtils().convertJsonToString(engine.getConsoleCommandHandler().handleApiCommand(msg));
+    }
+
+    private class ApiHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange httpExchange) throws IOException {
+            String req;
+            try {
+                req = readRequestBody(httpExchange);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+            engine.getUtilityBase().printOutput(consMsgDef + " !Received: (" + req + ") from: (" + httpExchange.getRemoteAddress().getHostString() + ")!", true);
+            String rec;
+            try {
+                rec = handleRec(req);
+            } catch (Exception e) {
+                if (engine.getProperties().debug)
+                    e.printStackTrace();
+                sendResponse(httpExchange, "{ \"status\" : \"400\", \"response\" : \"Error with json file\"}", 400);
+                engine.getUtilityBase().printOutput(consMsgDef + "!!!Error in request -> Respond: " + "400" + "!!!", true);
+                return;
+            }
+            if (rec == null) {
+                sendResponse(httpExchange, "{ \"status\" : \"400\", \"response\" : \"Error with json file\"}", 400);
+                engine.getUtilityBase().printOutput(consMsgDef + " !Respond: " + "400" + "!", true);
+                return;
+            }
+            if (!rec.equals("")) {
+                sendResponse(httpExchange, rec, 200);
+                engine.getUtilityBase().printOutput(consMsgDef + " !Respond: " + rec + "!", true);
+            } else {
+                sendResponse(httpExchange, "{ \"status\" : \"400\", \"response\" : \"Error with json file\"}", 400);
+                engine.getUtilityBase().printOutput(consMsgDef + " !Respond: " + "400" + "!", true);
+            }
+        }
+    }
+
+    private void sendResponse(HttpExchange httpExchange, String s, int httpCode) {
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods","GET, OPTIONS, HEAD, PUT, POST");
+        httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "content-type");
+        OutputStream os = httpExchange.getResponseBody();
+        try {
+            httpExchange.sendResponseHeaders(200, s.length());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            os.write(s.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String readRequestBody(HttpExchange he) throws IOException {
+        InputStream input = he.getRequestBody();
+        StringBuilder stringBuilder = new StringBuilder();
+
+        new BufferedReader(new InputStreamReader(input))
+                .lines()
+                .forEach( (String s) -> stringBuilder.append(s + "\n") );
+        return stringBuilder.toString();
     }
 }

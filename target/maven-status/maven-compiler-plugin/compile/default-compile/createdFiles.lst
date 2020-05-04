@@ -5,6 +5,7 @@ homeworkApi\librarys\User.class
 botApplications\discApplication\utils\DiscTextUtils$12.class
 botApplications\telApplication\core\MessageListener.class
 utils\FileUtils.class
+botRequestApi\api\BotRequestApi$ApiHandler.class
 homeworkApi\threads\ReminderThread.class
 core\ConsoleCommandHandler$SystemInListener.class
 botApplications\discApplication\listeners\ServerMessageListener.class
@@ -17,6 +18,7 @@ core\SaveThread.class
 botApplications\discApplication\librarys\DiscHomeworkConnection.class
 botApplications\telApplication\commands\TeleCmdChannelId.class
 botApplications\telApplication\commands\TeleCommand.class
+botRequestApi\api\BotRequestApi.class
 botApplications\discApplication\utils\DiscTextUtils$11.class
 homeworkApi\core\HomeworkApiEngine$1.class
 homeworkApi\core\HomeworkApiEngine$SortDate.class
@@ -50,6 +52,7 @@ homeworkApi\librarys\User$UserType.class
 botApplications\discApplication\utils\DiscTextUtils$1.class
 homeworkApi\core\RequestManager.class
 utils\Properties.class
+botRequestApi\api\BotRequestApi$1.class
 core\ConsoleCommandHandler$1.class
 homeworkApi\threads\UpdateThread.class
 botApplications\discApplication\commands\DiscCmdAddNotificationChannel$1.class

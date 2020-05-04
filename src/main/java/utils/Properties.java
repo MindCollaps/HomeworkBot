@@ -11,6 +11,8 @@ public class Properties implements Serializable {
 
     public static final long serialVersionUID = 42L;
 
+    public int apiPort = 0;
+
     //Discord BotApplication stuff
     public String discBotApplicationToken = "";
     public String discBotApplicationGame = "-notification help - to see help";

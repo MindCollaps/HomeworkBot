@@ -5,8 +5,6 @@ import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Update;
 import core.Engine;
 
-import java.util.ArrayList;
-
 public class TeleCmdRemoveNotificationChannel implements TeleCommand {
     @Override
     public boolean called(Update command, Engine engine, String[] args) {

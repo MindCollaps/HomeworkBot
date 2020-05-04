@@ -4,7 +4,6 @@ import botApplications.discApplication.core.DiscApplicationEngine;
 import botApplications.response.ResponseHandler;
 import botApplications.telApplication.core.TeleApplicationEngine;
 import botRequestApi.api.BotRequestApi;
-import botRequestApi.netConnect.NetConnectCore;
 import homeworkApi.core.HomeworkApiEngine;
 import utils.FileUtils;
 import utils.Properties;
@@ -49,6 +48,8 @@ public class Engine {
                     botRequestApi.boot(false);
                     break;
             }
+        } else {
+            botRequestApi.boot(false);
         }
     }
 
