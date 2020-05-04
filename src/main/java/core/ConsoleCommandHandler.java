@@ -208,8 +208,24 @@ public class ConsoleCommandHandler {
                 engine.getUtilityBase().printOutput("Die Nachricht wurde an die jeweiligen Klassen gesendet!", false);
                 break;
 
+            case "apiport":
+                key = "";
+                try {
+                    key = command.split(" ")[1];
+                } catch (Exception e) {
+                    engine.getUtilityBase().printOutput("Invalid", false);
+                    return false;
+                }
+                try {
+                    engine.getProperties().apiPort = Integer.parseInt(key);
+                    engine.getUtilityBase().printOutput("Set api port to " + key, false);
+                } catch (Exception e){
+                    engine.getUtilityBase().printOutput("Invalid", false);
+                }
+                break;
+
             case "help":
-                System.out.println("postclass <class> <text> - Posts message to a specific class\npostall <Text> - Posts a Message to all classes\npost <Id> - Posts a Task to classes\nremindspeed <speed> - changes speed of remind thread (minutes)\nsavespeed <speed> - changes speed of save intervall...lol (minutes)\nfetchUpdate - loads all tasks from server\nupdateremind - looks for reminding updates with current saved values\nload - loads all files (override)\nsave - saves all files\nstartBot - starts the bot...UwU\nstopBot - stops the bot\n<tele/disc>token <token> - sets api token\ntelename <name> - sets Name of the Telegram bot\ndebug - turns on debug mode to see more\nshowtime - shows time at console output");
+                System.out.println("postclass <class> <text> - Posts message to a specific class\npostall <Text> - Posts a Message to all classes\npost <Id> - Posts a Task to classes\nremindspeed <speed> - changes speed of remind thread (minutes)\nsavespeed <speed> - changes speed of save intervall...lol (minutes)\nfetchUpdate - loads all tasks from server\nupdateremind - looks for reminding updates with current saved values\nload - loads all files (override)\nsave - saves all files\nstartBot - starts the bot...UwU\nstopBot - stops the bot\n<tele/disc>token <token> - sets api token\ntelename <name> - sets Name of the Telegram bot\napiport <port> - chnages api port\ndebug - turns on debug mode to see more\nshowtime - shows time at console output");
                 break;
 
             default:
